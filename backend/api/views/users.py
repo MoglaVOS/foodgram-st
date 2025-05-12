@@ -1,5 +1,4 @@
 from django.contrib.auth import get_user_model
-from django.core.serializers import serialize
 from django.shortcuts import get_object_or_404
 
 from djoser.views import UserViewSet
@@ -25,7 +24,7 @@ class CustomUserViewSet(UserViewSet):
         serializer = CustomUserSerializer(user, context={'request': request})
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post', 'delete'])
+    @action(detail=True, methods=['post', 'delete'], permission_classes=[permissions.IsAuthenticated])
     def subscribe(self, request, *args, **kwargs):
         author = get_object_or_404(User, pk=self.kwargs.get('pk'))
         if request.method == 'POST':
@@ -40,3 +39,15 @@ class CustomUserViewSet(UserViewSet):
             if deleted:
                 return Response({'detail': 'Успешная отписка'}, status=status.HTTP_204_NO_CONTENT)
             return Response({'detail': 'Подписка не найдена'}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def subscriptions(self, request, *args, **kwargs):
+        user = request.user
+        queryset = User.objects.filter(following__user=user)
+        page = self.paginate_queryset(queryset)
+        serializer = FollowSerializer(page, many=True, context={'request': request})
+        return self.get_paginated_response(serializer.data)
+
+    # TODO: Разобраться с обновлением пароля
+    # @action(detail=False, methods=['get'], permissions=[permissions.IsAuthenticated])
+    # def set_password(self, request, *args, **kwargs):
