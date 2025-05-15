@@ -36,7 +36,7 @@ jobs:
       - name: Install dependencies
         run: pip install -r ./backend/requirements.txt --quiet
       - name: Get env
-        run: cp ./infra/.env.example ./infra/.env
+        run: cp ./infra/.example.env ./infra/.env
       - name: Migrate
         run: python ./backend/manage.py migrate
       - name: Load data
