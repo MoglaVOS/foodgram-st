@@ -25,7 +25,7 @@ jobs:
       - name: Install dependencies
         run: pip install -r ./backend/requirements.txt --quiet
       - name: Get env
-        run: cp ./infra/.example.env ./infra/.env
+        run: cp ./infra/.env.example ./infra/.env
       - name: Wait for PostgreSQL to be ready
         run: |
           echo "Waiting for PostgreSQL..."
