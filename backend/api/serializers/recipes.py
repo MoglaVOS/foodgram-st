@@ -159,7 +159,7 @@ class UserRecipeSerializer(serializers.ModelSerializer):
 
     def get_recipes(self, obj):
         request = self.context.get('request')
-        recipes = obj.recipes.all()
-        serializer = ShortRecipeSerializer(
-            recipes, many=True, context={'request': request})
-        return serializer.data
+        recipes_limit = int(request.query_params.get('recipes_limit', '10000'))
+        return ShortRecipeSerializer(
+            obj.recipes.all()[:recipes_limit], many=True, context=self.context
+        ).data
