@@ -34,7 +34,7 @@ services:
       - static:/app/backend_static/
       - media:/app/media/
     depends_on:
-      - postgres
+      - db
     networks:
       - default
 
