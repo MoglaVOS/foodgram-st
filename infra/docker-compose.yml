@@ -9,13 +9,19 @@ networks:
     name: foodgram_network
 
 services:
-  postgres:
-    container_name: foodgram-db
+  db:
     image: postgres:17.3
     env_file:
       - .env
     volumes:
       - pg_data:/var/lib/postgresql/data/
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d ${POSTGRES_DB} -U ${POSTGRES_USER}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
     networks:
       - default
 
