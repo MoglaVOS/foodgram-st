@@ -9,6 +9,21 @@ jobs:
   backend_tests:
     name: Run backend tests
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image:
+          postgres:17.4
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: 3235678
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -24,16 +39,14 @@ jobs:
           flake8 . --max-line-length=80
       - name: Install dependencies
         run: pip install -r ./backend/requirements.txt --quiet
-      - name: Get env
-        run: cp ./infra/.env.example ./infra/.env
-#      - name: Wait for PostgreSQL to be ready
-#        run: |
-#          echo "Waiting for PostgreSQL..."
-#          sleep 10
-#          until pg_isready -h foodgram-db -p 5432; do
-#            echo "Waiting for PostgreSQL to be ready..."
-#            sleep 10
-#          done
+            - name: Wait for PostgreSQL to be ready
+              run: |
+                echo "Waiting for PostgreSQL..."
+                sleep 10
+                until pg_isready -h db -p 5432; do
+                  echo "Waiting for PostgreSQL to be ready..."
+                  sleep 10
+                done
       - name: Migrate
         run: python ./backend/manage.py migrate
       - name: Load data
