@@ -9,7 +9,7 @@ networks:
     name: foodgram_network
 
 services:
-  db:
+  postgres:
     image: postgres:17.3
     env_file:
       - .env
@@ -27,7 +27,7 @@ services:
       - static:/app/backend_static/
       - media:/app/media/
     depends_on:
-      - db
+      - postgres
     networks:
       - default
 
