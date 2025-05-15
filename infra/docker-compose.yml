@@ -3,7 +3,7 @@ volumes:
   static:
   media:
 services:
-  db:
+  postgres:
     container_name: foodgram-db
     image: postgres:17.3
     env_file:
@@ -20,7 +20,7 @@ services:
       - static:/app/backend_static/
       - media:/app/media/
     depends_on:
-      - db
+      - postgres
 
   frontend:
     container_name: foodgram-front
