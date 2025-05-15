@@ -26,6 +26,14 @@ jobs:
         run: pip install -r ./backend/requirements.txt --quiet
       - name: Get env
         run: cp ./infra/.example.env ./infra/.env
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          echo "Waiting for PostgreSQL..."
+          sleep 10  
+          until pg_isready -h foodgram-db -p 5432; do
+            echo "Waiting for PostgreSQL to be ready..."
+            sleep 10
+          done
       - name: Migrate
         run: python ./backend/manage.py migrate
       - name: Load data
