@@ -1,53 +1,87 @@
-from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-
 from djoser.views import UserViewSet
 
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.exceptions import ValidationError
 
-from api.models import Follow
-from api.serializers import CustomUserSerializer, FollowSerializer
-
-User = get_user_model()
+from api.models import CustomUser as User
+from api.serializers.recipes import UserRecipeSerializer
 
 
 class CustomUserViewSet(UserViewSet):
-    queryset = User.objects.all()
-    pagination_class = LimitOffsetPagination
+    """Кастомный UserViewSet."""
+    lookup_url_kwarg = 'pk'
 
-    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    @action(
+        detail=False,
+        methods=['get'],
+        permission_classes=[permissions.IsAuthenticated]
+    )
     def me(self, request):
         user = self.request.user
-        serializer = CustomUserSerializer(user, context={'request': request})
+        serializer = self.get_serializer(user, context={'request': request})
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post', 'delete'], permission_classes=[permissions.IsAuthenticated])
-    def subscribe(self, request, *args, **kwargs):
-        author = get_object_or_404(User, pk=self.kwargs.get('pk'))
-        if request.method == 'POST':
-            serializer = FollowSerializer(data=request.data, context={'request': request})
-            if serializer.is_valid():
-                serializer.save(user=request.user, following=author)
-                return Response({f'Вы подписались на {author}': serializer.data}, status=status.HTTP_201_CREATED)
-            return Response({'error': 'Объект не найден'}, status=status.HTTP_400_BAD_REQUEST)
-
-        if request.method == 'DELETE':
-            deleted, _ = Follow.objects.filter(user=request.user, following=author).delete()
-            if deleted:
-                return Response({'detail': 'Успешная отписка'}, status=status.HTTP_204_NO_CONTENT)
-            return Response({'detail': 'Подписка не найдена'}, status=status.HTTP_400_BAD_REQUEST)
-
-    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
-    def subscriptions(self, request, *args, **kwargs):
+    @action(detail=True, methods=['post', 'delete'],
+            permission_classes=[permissions.IsAuthenticated])
+    def subscribe(self, request, pk=None):
         user = request.user
-        queryset = User.objects.filter(following__user=user)
+        author = get_object_or_404(User, pk=pk)
+
+        if request.method == 'POST':
+            if user == author:
+                raise ValidationError('Нельзя подписаться на самого себя.')
+            obj, is_created = user.subscriptions.get_or_create(author=author)
+            if not is_created:
+                raise ValidationError('Вы уже подписаны.')
+            serializer = UserRecipeSerializer(
+                author, context={'request': request}
+            )
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        elif request.method == 'DELETE':
+            obj = user.subscriptions.filter(author=author)
+            if not obj.exists():
+                raise ValidationError('Вы не подписаны.')
+            obj.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=False, methods=['get'],
+            permission_classes=[permissions.IsAuthenticated])
+    def subscriptions(self, request):
+        user = request.user
+        queryset = User.objects.filter(author__subscriber=user)
         page = self.paginate_queryset(queryset)
-        serializer = FollowSerializer(page, many=True, context={'request': request})
+        serializer = UserRecipeSerializer(
+            page, many=True, context={'request': request}
+        )
         return self.get_paginated_response(serializer.data)
 
-    # TODO: Разобраться с обновлением пароля
-    # @action(detail=False, methods=['get'], permissions=[permissions.IsAuthenticated])
-    # def set_password(self, request, *args, **kwargs):
+    @action(detail=False, methods=['put', 'delete'],
+            permission_classes=[permissions.IsAuthenticated],
+            url_path='me/avatar'
+            )
+    def set_avatar(self, request):
+        if request.method == 'PUT':
+            if 'avatar' not in request.data:
+                return Response({'detail': 'Поле обязательно'},
+                                status=status.HTTP_400_BAD_REQUEST)
+            serializer = self.get_serializer(
+                request.user, data=request.data, partial=True
+            )
+            if serializer.is_valid():
+                serializer.save()
+                return Response({'avatar': serializer.data['avatar']},
+                                status=status.HTTP_200_OK)
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if request.method == 'DELETE':
+            request.user.avatar.delete()
+            request.user.avatar = None
+            request.user.save()
+            return Response({'detail': 'Аватар успешно удален'},
+                            status=status.HTTP_204_NO_CONTENT)
