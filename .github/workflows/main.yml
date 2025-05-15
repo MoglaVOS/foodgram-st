@@ -48,7 +48,7 @@ jobs:
       - name: Load data
         run: python ./backend/manage.py loaddata ./backend/example_data/ingredients.json
       - name: Start server
-        run:
+        run: |
           cd ./backend/
           nohup python manage.py runserver 127.0.0.1:8000 &
       - name: Wait for server to be ready
