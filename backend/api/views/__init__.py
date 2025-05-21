@@ -1,8 +1,8 @@
-from .users import CustomUserViewSet
+from .users import UserViewSet
 from .recipes import RecipeViewSet, IngredientViewSet
 
 __all__ = [
-    'CustomUserViewSet',
+    'UserViewSet',
     'RecipeViewSet',
     'IngredientViewSet',
 ]

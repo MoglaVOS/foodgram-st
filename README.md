@@ -1,5 +1,10 @@
 # Foodgram
-
+![Django](https://img.shields.io/badge/Django-092E20?logo=django&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?logo=postgresql&logoColor=white)
+![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black)
+![Nginx](https://img.shields.io/badge/Nginx-009639?logo=nginx&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?logo=github-actions&logoColor=white)
 ***
 
 ### Описание
@@ -8,7 +13,7 @@ Foodgram — это удобное приложение, позволяющее 
 избранное, формировать списки покупок и подписываться на авторов.
 ***
 
-### Как запустить приложение
+### Команды развертывания
 
 #### 1. Клонировать репозиторий
 
@@ -42,17 +47,25 @@ docker compose exec backend python manage.py migrate
 docker compose exec backend python manage.py collectstatic --no-input
 docker compose restart
 ```
-
-- Наполним бд
+- Создадим суперпользователя
 
 ```
-docker compose exec backend python manage.py loaddata example_data/ingredients.json
+docker compose exec backend python manage.py createsuperuser
+```
+
+- Импортируем ингредиенты
+
+```
+docker compose exec backend python manage.py loaddata ./data/ingredients.json
 ```
 
 #### 5. Примеры запросов к API
+- [Главная страница](http://localhost/)
+- [Панель администратора](http://localhost/admin/)
+- [Документация к API](http://localhost/api/docs/)
+   
 
-Адрес Описание
+>Автор: Юрин Андрей
+> [GitHub](https://github.com/MoglaVOS)
+> [Telegram](https://t.me/shiverof)
 
-- http://localhost/    Главная страница
-- http://localhost/admin/    Панель администратора
-- http://localhost/api/docs/    Документация к API

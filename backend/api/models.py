@@ -1,14 +1,17 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.validators import UnicodeUsernameValidator
+from django.core.validators import MinValueValidator
+
+MIN_VALUE = 1
 
 
-class CustomUser(AbstractUser):
+class User(AbstractUser):
     """Модель пользователей."""
     username = models.CharField(
         max_length=150,
         unique=True,
-        verbose_name='Имя пользователя',
+        verbose_name='Никнейм',
         validators=[
             UnicodeUsernameValidator(),
         ]
@@ -38,6 +41,7 @@ class CustomUser(AbstractUser):
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
+        ordering = ('username',)
 
     def __str__(self):
         return self.username
@@ -46,22 +50,27 @@ class CustomUser(AbstractUser):
 class Subscription(models.Model):
     """Модель подписок."""
     author = models.ForeignKey(
-        CustomUser, verbose_name='Автор',
-        on_delete=models.CASCADE, related_name='author'
+        User, verbose_name='Автор',
+        on_delete=models.CASCADE, related_name='authors'
     )
     subscriber = models.ForeignKey(
-        CustomUser, verbose_name='Подписан',
+        User, verbose_name='Подписан',
         on_delete=models.CASCADE, related_name='subscriptions'
     )
 
     class Meta:
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
+        ordering = ('author__username',)
         constraints = [
             models.UniqueConstraint(
                 fields=['subscriber', 'author'],
                 name='unique_subscription'
             ),
+            models.CheckConstraint(
+                check=~models.Q(subscriber=models.F('author')),
+                name='self_subscription'
+            )
         ]
 
     def __str__(self):
@@ -71,17 +80,18 @@ class Subscription(models.Model):
 class Ingredient(models.Model):
     """Модель ингредиентов."""
     name = models.CharField(
-        max_length=255,
+        max_length=128,
         verbose_name='Название ингредиента'
     )
     measurement_unit = models.CharField(
-        max_length=10,
+        max_length=64,
         verbose_name='Единица измерения'
     )
 
     class Meta:
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
+        ordering = ('name',)
 
     def __str__(self):
         return self.name
@@ -90,9 +100,8 @@ class Ingredient(models.Model):
 class Recipe(models.Model):
     """Модель рецептов."""
     author = models.ForeignKey(
-        CustomUser,
+        User,
         on_delete=models.CASCADE,
-        related_name='recipes',
         verbose_name='Автор'
     )
     name = models.CharField(
@@ -108,12 +117,15 @@ class Recipe(models.Model):
         related_name='recipes'
     )
     cooking_time = models.PositiveSmallIntegerField(
-        verbose_name='Время приготовления'
+        verbose_name='Время приготовления',
+        validators=[MinValueValidator(MIN_VALUE)]
     )
 
     class Meta:
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
+        default_related_name = 'recipes'
+        ordering = ('name',)
 
     def __str__(self):
         return self.name
@@ -130,10 +142,12 @@ class RecipeIngredient(models.Model):
     ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
+        related_name='used_in_recipes',
         verbose_name='Ингредиент'
     )
     amount = models.PositiveSmallIntegerField(
-        verbose_name='Количество'
+        verbose_name='Количество',
+        validators=[MinValueValidator(MIN_VALUE)]
     )
 
     class Meta:
@@ -144,42 +158,12 @@ class RecipeIngredient(models.Model):
         return f'{self.ingredient} - {self.amount}'
 
 
-class Favorite(models.Model):
-    """Модель избранных рецептов."""
+class AbstractRecipe(models.Model):
+    """Абстрактная модель избранных рецептов и списка покупок."""
     user = models.ForeignKey(
-        CustomUser,
+        User,
         on_delete=models.CASCADE,
         verbose_name='Пользователь'
-    )
-    recipe = models.ForeignKey(
-        Recipe,
-        on_delete=models.CASCADE,
-        verbose_name='Рецепт',
-        related_name='favorites'
-    )
-
-    class Meta:
-        verbose_name = 'Избранный рецепт'
-        verbose_name_plural = 'Избранные рецепты'
-        constraints = [
-            models.UniqueConstraint(
-                fields=['user', 'recipe'],
-                name='unique_favorite'
-            ),
-        ]
-        default_related_name = 'favorites'
-
-    def __str__(self):
-        return f'{self.recipe} - {self.user}'
-
-
-class ShoppingCart(models.Model):
-    """Модель списка покупок."""
-    user = models.ForeignKey(
-        CustomUser,
-        on_delete=models.CASCADE,
-        verbose_name='Пользователь',
-        related_name='shopping_cart'
     )
     recipe = models.ForeignKey(
         Recipe,
@@ -188,15 +172,32 @@ class ShoppingCart(models.Model):
     )
 
     class Meta:
-        verbose_name = 'Список покупок'
-        verbose_name_plural = 'Списки покупок'
-        default_related_name = 'shopping_cart'
+        abstract = True
         constraints = [
             models.UniqueConstraint(
                 fields=['user', 'recipe'],
-                name='unique_shopping_cart'
-            ),
+                name='unique_%(class)s_recipe'
+            )
         ]
+        ordering = ('user__username', 'recipe__name')
 
     def __str__(self):
-        return f'{self.recipe} - {self.user}'
+        return f'{self.recipe.id} - {self.user.id}'
+
+
+class Favorite(AbstractRecipe):
+    """Модель избранных рецептов."""
+
+    class Meta(AbstractRecipe.Meta):
+        verbose_name = 'Избранный рецепт'
+        verbose_name_plural = 'Избранные рецепты'
+        default_related_name = 'favorites'
+
+
+class ShoppingCart(AbstractRecipe):
+    """Модель списка покупок."""
+
+    class Meta(AbstractRecipe.Meta):
+        verbose_name = 'Список покупок'
+        verbose_name_plural = 'Списки покупок'
+        default_related_name = 'shopping_carts'

@@ -1,16 +1,16 @@
 from django.shortcuts import get_object_or_404
-from djoser.views import UserViewSet
+from djoser.views import UserViewSet as DjoserUserViewSet
 
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 
-from api.models import CustomUser as User
+from api.models import User
 from api.serializers.recipes import UserRecipeSerializer
 
 
-class CustomUserViewSet(UserViewSet):
+class UserViewSet(DjoserUserViewSet):
     """Кастомный UserViewSet."""
     lookup_url_kwarg = 'pk'
 
@@ -35,7 +35,8 @@ class CustomUserViewSet(UserViewSet):
                 raise ValidationError('Нельзя подписаться на самого себя.')
             obj, is_created = user.subscriptions.get_or_create(author=author)
             if not is_created:
-                raise ValidationError('Вы уже подписаны.')
+                raise ValidationError(f'Вы уже подписаны '
+                                      f'на {author.username}.')
             serializer = UserRecipeSerializer(
                 author, context={'request': request}
             )
@@ -52,7 +53,7 @@ class CustomUserViewSet(UserViewSet):
             permission_classes=[permissions.IsAuthenticated])
     def subscriptions(self, request):
         user = request.user
-        queryset = User.objects.filter(author__subscriber=user)
+        queryset = User.objects.filter(authors__subscriber=user)
         page = self.paginate_queryset(queryset)
         serializer = UserRecipeSerializer(
             page, many=True, context={'request': request}
@@ -79,9 +80,8 @@ class CustomUserViewSet(UserViewSet):
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
 
-        if request.method == 'DELETE':
-            request.user.avatar.delete()
-            request.user.avatar = None
-            request.user.save()
-            return Response({'detail': 'Аватар успешно удален'},
-                            status=status.HTTP_204_NO_CONTENT)
+        request.user.avatar.delete()
+        request.user.avatar = None
+        request.user.save()
+        return Response({'detail': 'Аватар успешно удален'},
+                        status=status.HTTP_204_NO_CONTENT)

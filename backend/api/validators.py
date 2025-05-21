@@ -12,14 +12,9 @@ def validate_ingredients_data(ingredients_data):
         raise serializers.ValidationError({
             'ingredients': 'У рецепта должен быть хотя бы один ингредиент.'
         })
-    try:
-        ingredients_id_list = [
-            ingredient['id'] for ingredient in ingredients_data
-        ]
-    except KeyError:
-        raise serializers.ValidationError({
-            'ingredients': 'Каждый ингредиент должен содержать поле id.'
-        })
+    ingredients_id_list = [
+        ingredient['ingredient'].id for ingredient in ingredients_data
+    ]
     existing_ids = set(
         Ingredient.objects.filter(
             id__in=ingredients_id_list).values_list('id', flat=True)
@@ -32,9 +27,3 @@ def validate_ingredients_data(ingredients_data):
         raise serializers.ValidationError({
             'ingredients': 'Ингредиенты не должны повторяться.'
         })
-    for ingredient in ingredients_data:
-        if int(ingredient.get('amount', 0)) <= 0:
-            raise serializers.ValidationError({
-                'ingredients': 'Количество ингредиента должно быть больше 0.'
-            })
-    return ingredients_data
