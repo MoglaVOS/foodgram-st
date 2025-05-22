@@ -3,7 +3,8 @@ from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.core.validators import MinValueValidator
 
-MIN_VALUE = 1
+MIN_VALUE_COOKING_TIME = 1
+MIN_VALUE_AMOUNT = 1
 
 
 class User(AbstractUser):
@@ -25,6 +26,7 @@ class User(AbstractUser):
         verbose_name='Фамилия'
     )
     email = models.EmailField(
+        max_length=254,
         unique=True,
         verbose_name='Электронная почта'
     )
@@ -114,11 +116,10 @@ class Recipe(models.Model):
         Ingredient,
         through='RecipeIngredient',
         verbose_name='Ингредиенты',
-        related_name='recipes'
     )
     cooking_time = models.PositiveSmallIntegerField(
         verbose_name='Время приготовления',
-        validators=[MinValueValidator(MIN_VALUE)]
+        validators=[MinValueValidator(MIN_VALUE_COOKING_TIME)]
     )
 
     class Meta:
@@ -137,28 +138,27 @@ class RecipeIngredient(models.Model):
         Recipe,
         on_delete=models.CASCADE,
         verbose_name='Рецепт',
-        related_name='ingredients_amounts'
     )
     ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
-        related_name='used_in_recipes',
         verbose_name='Ингредиент'
     )
     amount = models.PositiveSmallIntegerField(
         verbose_name='Количество',
-        validators=[MinValueValidator(MIN_VALUE)]
+        validators=[MinValueValidator(MIN_VALUE_AMOUNT)]
     )
 
     class Meta:
         verbose_name = 'Ингредиент рецепта'
         verbose_name_plural = 'Ингредиенты рецепта'
+        default_related_name = 'ingredients_amounts'
 
     def __str__(self):
         return f'{self.ingredient} - {self.amount}'
 
 
-class AbstractRecipe(models.Model):
+class AbstractUserFavoritesAndShoppingCarts(models.Model):
     """Абстрактная модель избранных рецептов и списка покупок."""
     user = models.ForeignKey(
         User,
@@ -185,19 +185,19 @@ class AbstractRecipe(models.Model):
         return f'{self.recipe.id} - {self.user.id}'
 
 
-class Favorite(AbstractRecipe):
+class Favorite(AbstractUserFavoritesAndShoppingCarts):
     """Модель избранных рецептов."""
 
-    class Meta(AbstractRecipe.Meta):
+    class Meta(AbstractUserFavoritesAndShoppingCarts.Meta):
         verbose_name = 'Избранный рецепт'
         verbose_name_plural = 'Избранные рецепты'
         default_related_name = 'favorites'
 
 
-class ShoppingCart(AbstractRecipe):
+class ShoppingCart(AbstractUserFavoritesAndShoppingCarts):
     """Модель списка покупок."""
 
-    class Meta(AbstractRecipe.Meta):
+    class Meta(AbstractUserFavoritesAndShoppingCarts.Meta):
         verbose_name = 'Список покупок'
         verbose_name_plural = 'Списки покупок'
         default_related_name = 'shopping_carts'

@@ -45,6 +45,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
+    cooking_time = serializers.IntegerField(min_value=1)
 
     class Meta:
         model = Recipe
@@ -95,10 +96,9 @@ class RecipeSerializer(serializers.ModelSerializer):
         """Обновление рецепта."""
         ingredients_data = validated_data.pop('ingredients_amounts', None)
         validate_ingredients_data(ingredients_data)
-        instance = super().update(instance, validated_data)
         instance.ingredients_amounts.all().delete()
         self.set_recipe_ingredients(instance, ingredients_data)
-        return instance
+        return super().update(instance, validated_data)
 
 
 class ShortRecipeSerializer(serializers.ModelSerializer):

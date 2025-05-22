@@ -26,37 +26,37 @@ git clone https://github.com/MoglaVOS/foodgram-st.git
 
 Создайте в директории infra файл '.env' и заполните его данными из файла '.env.example'.
 
-#### 3. Запуск приложения
+#### 3. Запустить приложения
 
 ```
 # Выполните команду находясь в директории infra
 docker compose up -d --build
 ```
 
-#### 4. Наполнение данными и получение статики
+#### 4. Наполнить данными и получение статики
 
-- Выполним миграции
+- Выполнить миграции
 
 ```
 docker compose exec backend python manage.py migrate
 ```
 
-- Соберём статику
+- Собрать статику
 
 ```
 docker compose exec backend python manage.py collectstatic --no-input
 docker compose restart
 ```
-- Создадим суперпользователя
+- Создать суперпользователя
 
 ```
 docker compose exec backend python manage.py createsuperuser
 ```
 
-- Импортируем ингредиенты
+- Импортировать ингредиенты
 
 ```
-docker compose exec backend python manage.py loaddata ./data/ingredients.json
+docker compose exec backend python manage.py load_ingredients ../data/ingredients.json
 ```
 
 #### 5. Примеры запросов к API

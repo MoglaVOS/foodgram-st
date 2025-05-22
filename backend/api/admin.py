@@ -113,7 +113,7 @@ class SubscriptionAdmin(admin.ModelAdmin):
 
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
-    list_display = ('name', 'measurement_unit', 'used_in_recipes_count')
+    list_display = ('name', 'measurement_unit', 'ingredients_amounts_count')
     list_display_links = ('name',)
     list_filter = ('measurement_unit',)
     search_fields = ('name', 'measurement_unit')
@@ -121,12 +121,12 @@ class IngredientAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).annotate(
-            used_in_recipes_count=Count('recipes', distinct=True)
+            ingredients_amounts_count=Count('recipes', distinct=True)
         )
 
-    @admin.display(description='Использован в рецептах')
-    def used_in_recipes_count(self, ingredient):
-        return ingredient.used_in_recipes_count
+    @admin.display(description='В рецептах')
+    def ingredients_amounts_count(self, ingredient):
+        return ingredient.ingredients_amounts_count
 
 
 @admin.register(Recipe)
@@ -139,7 +139,7 @@ class RecipeAdmin(admin.ModelAdmin):
                     'get_ingredients',
                     'image_preview')
     list_display_links = ('name',)
-    list_filter = ('cooking_time',)
+    list_filter = ('cooking_time', 'author')
     search_fields = ('name', 'ingredients__name')
 
     @admin.display(description='Избранное')
@@ -148,7 +148,11 @@ class RecipeAdmin(admin.ModelAdmin):
 
     @admin.display(description='Ингредиенты')
     def get_ingredients(self, recipe):
-        return ', '.join([ing.name for ing in recipe.ingredients.all()])
+        return '\n'.join(
+            f'{item.ingredient.name} — {item.amount}'
+            f' ({item.ingredient.measurement_unit})'
+            for item in recipe.ingredients_amounts.all()
+        )
 
     @mark_safe
     @admin.display(description='Изображение')
@@ -166,7 +170,7 @@ class RecipeIngredientAdmin(admin.ModelAdmin):
 
 
 @admin.register(ShoppingCart, Favorite)
-class ShoppingCartAdmin(admin.ModelAdmin):
+class ShoppingCartAndFavoriteAdmin(admin.ModelAdmin):
     list_display = ('user', 'recipe')
     list_display_links = ('user', 'recipe')
     search_fields = ('user__username', 'recipe__name')

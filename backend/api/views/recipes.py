@@ -3,6 +3,8 @@ from django.http import FileResponse
 from django.db.models import F, Sum
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils.timezone import now
+from django.urls import reverse
+from django.views.generic import RedirectView
 
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from rest_framework import permissions
@@ -20,6 +22,12 @@ from api.serializers.recipes import (
 )
 from api.filter import IngredientSearchFilter, RecipeSearchFilter
 from api.permissions import IsAuthorOrReadOnly
+
+
+class ShortLinkRedirectView(RedirectView):
+    def get_redirect_url(self, *args, **kwargs):
+        recipe = get_object_or_404(Recipe, pk=kwargs['pk'])
+        return reverse('recipe-detail', kwargs={'pk': recipe.pk})
 
 
 class IngredientViewSet(ReadOnlyModelViewSet):
@@ -45,7 +53,7 @@ class RecipeViewSet(ModelViewSet):
         """Создать рецепт и присовить автора"""
         serializer.save(author=self.request.user)
 
-    def check_recipe_exists(self, model, request, recipe_id):
+    def set_recipe_exists(self, model, request, recipe_id):
         """Добавление/удаление рецепта в избранное/список покупок."""
         user = request.user
         recipe = get_object_or_404(Recipe, pk=recipe_id)
@@ -54,8 +62,10 @@ class RecipeViewSet(ModelViewSet):
                 user_id=user.id, recipe_id=recipe.id
             )
             if not is_created:
-                return Response({'detail': 'Рецепт уже в избранном'},
-                                status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {'detail': f'Рецепт "{recipe.name}" уже в избранном'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             return Response(ShortRecipeSerializer(recipe).data,
                             status=status.HTTP_201_CREATED)
 
@@ -65,29 +75,35 @@ class RecipeViewSet(ModelViewSet):
             ).delete()
             if deleted:
                 return Response(
-                    {'detail': 'Рецепт успешно удален из избранного'},
+                    {'detail': f'Рецепт "{recipe.name}" успешно '
+                               f'удален из избранного'},
                     status=status.HTTP_204_NO_CONTENT
                 )
-            return Response({'detail': 'Рецепт не найден в избранном'},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'detail': f'Рецепт "{recipe.name}" не найден в избранном'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=[permissions.IsAuthenticated])
     def favorite(self, request, pk):
         """Для добавления/удаления рецепта в избранное."""
-        return self.check_recipe_exists(Favorite, request, pk)
+        return self.set_recipe_exists(Favorite, request, pk)
 
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=[permissions.IsAuthenticated])
     def shopping_cart(self, request, pk):
         """Добавление/удаление рецепта в список покупок."""
-        return self.check_recipe_exists(ShoppingCart, request, pk)
+        return self.set_recipe_exists(ShoppingCart, request, pk)
 
     @action(detail=True, methods=['get'], url_path='get-link')
     def get_link(self, request, pk):
         recipe = get_object_or_404(Recipe, pk=pk)
-        url = f'{request.get_host()}/recipes/{recipe.id}/'
-        return Response({'short-link': url}, status=status.HTTP_200_OK)
+        relative_url = reverse('short-link', kwargs={'pk': recipe.pk})
+        absolute_url = request.build_absolute_uri(relative_url)
+        return Response(
+            {'short-link': absolute_url}, status=status.HTTP_200_OK
+        )
 
     @action(detail=False, methods=['get'],
             permission_classes=[permissions.IsAuthenticated])

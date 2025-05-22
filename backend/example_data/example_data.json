@@ -738,7 +738,7 @@
     "fields": {
       "name": "Can add Пользователь",
       "content_type": 8,
-      "codename": "add_customuser"
+      "codename": "add_user"
     }
   },
   {
@@ -747,7 +747,7 @@
     "fields": {
       "name": "Can change Пользователь",
       "content_type": 8,
-      "codename": "change_customuser"
+      "codename": "change_user"
     }
   },
   {
@@ -756,7 +756,7 @@
     "fields": {
       "name": "Can delete Пользователь",
       "content_type": 8,
-      "codename": "delete_customuser"
+      "codename": "delete_user"
     }
   },
   {
@@ -765,7 +765,7 @@
     "fields": {
       "name": "Can view Пользователь",
       "content_type": 8,
-      "codename": "view_customuser"
+      "codename": "view_user"
     }
   },
   {
@@ -1045,7 +1045,7 @@
     "pk": 8,
     "fields": {
       "app_label": "api",
-      "model": "customuser"
+      "model": "user"
     }
   },
   {
@@ -1121,7 +1121,7 @@
     }
   },
   {
-    "model": "api.customuser",
+    "model": "api.user",
     "pk": 1,
     "fields": {
       "password": "pbkdf2_sha256$870000$Djarh1SA9AvwgZ3z3aHBmc$CGM5bucaBVQK4Gt6RXgR8n7b2nSpp6t/iNJX9PySfIg=",
@@ -1140,7 +1140,7 @@
     }
   },
   {
-    "model": "api.customuser",
+    "model": "api.user",
     "pk": 2,
     "fields": {
       "password": "pbkdf2_sha256$870000$frrKoWFSSL9Ff0h30NfcVM$Vanj7flMoJxZxhyzyzQcjuaWEDuf9VRcB4DlUbhYkgE=",
@@ -1166,7 +1166,7 @@
     }
   },
   {
-    "model": "api.customuser",
+    "model": "api.user",
     "pk": 3,
     "fields": {
       "password": "pbkdf2_sha256$870000$oRxlwP2Ryp81x6yRyRlo1F$taatMK7FnBf4mH+Gs/bLP6wBpdxLEF5S/jsuuFlSdGI=",
@@ -1185,7 +1185,7 @@
     }
   },
   {
-    "model": "api.customuser",
+    "model": "api.user",
     "pk": 4,
     "fields": {
       "password": "pbkdf2_sha256$870000$0pUhavlcrn9n6bbD4qd4JT$0qVQrTkykjRMDp98D3N72T4ItLynhMd14blT3ty/7TU=",
@@ -1204,7 +1204,7 @@
     }
   },
   {
-    "model": "api.customuser",
+    "model": "api.user",
     "pk": 6,
     "fields": {
       "password": "pbkdf2_sha256$870000$1p2QSH2b3G2CFsejRdo5zT$qTF+0SATCLBaVRssRbCXmhYAlG6un9QlWH6R8MkHJK0=",
@@ -1223,7 +1223,7 @@
     }
   },
   {
-    "model": "api.customuser",
+    "model": "api.user",
     "pk": 7,
     "fields": {
       "password": "pbkdf2_sha256$870000$QI6KGhdeH97M6aKtU2eYAF$+jJk0WtvI2V43s8ttw65cxQzzFtLXmO6psj+rfCn2x8=",
@@ -1242,7 +1242,7 @@
     }
   },
   {
-    "model": "api.customuser",
+    "model": "api.user",
     "pk": 8,
     "fields": {
       "password": "pbkdf2_sha256$1000000$YL38hwkGX3QwIAiyTYLZXx$v+xlZ9Hjx4DjaYjm/0b8IFUegsQsLzM6mq0jJFZdWyc=",
